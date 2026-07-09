@@ -8,6 +8,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
+from scrape_smith import __version__
+
 
 @dataclass(frozen=True)
 class HtmlTable:
@@ -47,7 +49,7 @@ def read_html(target: str | Path) -> str:
     target_text = str(target)
     parsed = urlparse(target_text)
     if parsed.scheme in {"http", "https"}:
-        request = Request(target_text, headers={"User-Agent": "scrape-smith/0.1"})
+        request = Request(target_text, headers={"User-Agent": f"scrape-smith/{__version__}"})
         with urlopen(request, timeout=30) as response:
             charset = response.headers.get_content_charset() or "utf-8"
             return response.read().decode(charset, errors="replace")

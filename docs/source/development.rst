@@ -13,6 +13,24 @@ Run the test suite:
 
    uv run pytest
 
+Build the package locally when you need to inspect the distribution artifacts:
+
+.. code-block:: bash
+
+   uv build
+
+Publishing to PyPI is handled by GitHub Actions. Push release-worthy changes to
+``main`` or run the ``Publish to PyPI`` workflow manually. The workflow runs
+Python Semantic Release to stamp the next version, update ``uv.lock``, create
+the Git tag and GitHub Release, build the package with ``uv build``, and upload
+the distribution artifacts to PyPI using trusted publishing. Local
+``uv publish`` is not part of the release process.
+
+Published versions must have matching Git tags in the remote repository so
+Python Semantic Release can find the correct baseline. The current release is
+``0.1.1``, so keep ``v0.1.1`` available before running the workflow; without
+that tag, it can calculate the next version from an older release point.
+
 Build the documentation locally:
 
 .. code-block:: bash

@@ -6,9 +6,13 @@ ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))
 
+from scrape_smith import __version__  # noqa: E402
+
 project = "scrape-smith"
 author = "Eiichi YAMAMOTO"
 copyright = "2026, Eiichi YAMAMOTO"
+version = __version__
+release = __version__
 
 extensions = [
     "sphinx.ext.autodoc",

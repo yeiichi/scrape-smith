@@ -12,7 +12,7 @@ Supported sources
 - a local HTML file path
 - an HTTP or HTTPS URL
 
-Remote requests use a ``scrape-smith/0.1`` user agent and a 30-second timeout.
+Remote requests use a ``scrape-smith/<version>`` user agent and a 30-second timeout.
 The response charset is read from the HTTP headers when available, otherwise
 UTF-8 is used.
 
