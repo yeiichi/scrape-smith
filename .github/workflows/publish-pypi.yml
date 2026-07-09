@@ -52,7 +52,7 @@ jobs:
         id: release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uv run semantic-release -v --strict version
+        run: uv run semantic-release -v version
 
       - name: Upload distributions
         if: steps.release.outputs.released == 'true'
