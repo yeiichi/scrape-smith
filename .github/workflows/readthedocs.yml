@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Read the Docs version slug to build
+        description: Git branch name to build
         required: false
-        default: latest
+        default: main
 
 permissions:
   contents: read
@@ -23,14 +23,30 @@ jobs:
     name: Trigger RTD build
     runs-on: ubuntu-latest
     env:
-      RTD_PROJECT: scrape-smith
-      RTD_VERSION: ${{ github.event.inputs.version || 'latest' }}
+      RTD_WEBHOOK_URL: https://app.readthedocs.org/api/v2/webhook/scrape-smith/329643/
+      RTD_VERSION: ${{ github.event.inputs.version || github.ref_name }}
     steps:
       - name: Trigger Read the Docs build
         run: |
+          if [ -z "${RTD_WEBHOOK_SECRET}" ]; then
+            echo "::error::Missing repository secret RTD_WEBHOOK_SECRET"
+            exit 1
+          fi
+
+          payload="$(jq -nc \
+            --arg ref "refs/heads/${RTD_VERSION}" \
+            --arg default_branch "${{ github.event.repository.default_branch }}" \
+            '{ref: $ref, repository: {default_branch: $default_branch}}')"
+          signature="$(printf '%s' "${payload}" \
+            | openssl dgst -sha256 -hmac "${RTD_WEBHOOK_SECRET}" -binary \
+            | xxd -p -c 256)"
+
           curl --fail-with-body \
             --request POST \
-            --header "Authorization: Token ${RTD_TOKEN}" \
-            "https://readthedocs.org/api/v3/projects/${RTD_PROJECT}/versions/${RTD_VERSION}/builds/"
+            --header "Content-Type: application/json" \
+            --header "X-GitHub-Event: push" \
+            --header "X-Hub-Signature-256: sha256=${signature}" \
+            --data "${payload}" \
+            "${RTD_WEBHOOK_URL}"
         env:
-          RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
+          RTD_WEBHOOK_SECRET: ${{ secrets.RTD_WEBHOOK_SECRET }}

@@ -28,11 +28,10 @@ plain C locale:
    LC_ALL=C LANG=C sphinx-build -b html -E docs/source docs/build/html
 
 Read the Docs deployment is triggered from GitHub Actions instead of the
-Read the Docs GitHub webhook. Configure the repository secret ``RTD_TOKEN`` with
-a Read the Docs API token that can build the ``scrape-smith`` project, then
-disable the GitHub webhook in the Read the Docs project integration settings.
-The workflow builds the ``latest`` version on pushes to ``main`` and can be run
-manually for another Read the Docs version slug.
+Read the Docs GitHub App. Configure the repository secret
+``RTD_WEBHOOK_SECRET`` with the secret from the Read the Docs webhook
+integration. The workflow sends a signed GitHub push webhook to Read the Docs
+on pushes to ``main`` and can be run manually for another Git branch.
 
 Documentation should describe the actual command-line behavior and Python API in
 ``src/scrape_smith``. When a new tool is added, update the CLI reference, add a
