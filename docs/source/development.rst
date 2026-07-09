@@ -30,6 +30,9 @@ plain C locale:
 Read the Docs builds the documentation from the repository using its project
 configuration and ``.readthedocs.yaml``. Keep that file in sync with the local
 documentation build requirements when dependencies or build settings change.
+The Read the Docs project is configured to update only when files under
+``docs`` change; that trigger rule is managed in Read the Docs, not in this
+repository.
 
 Documentation should describe the actual command-line behavior and Python API in
 ``src/scrape_smith``. When a new tool is added, update the CLI reference, add a
