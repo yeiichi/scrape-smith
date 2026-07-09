@@ -3,7 +3,13 @@ name: Publish to PyPI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Existing release tag to publish, such as v0.1.1. Leave empty to run semantic-release on the selected branch.
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -19,21 +25,34 @@ jobs:
     permissions:
       contents: write
     outputs:
-      released: ${{ steps.release.outputs.released || 'false' }}
+      released: ${{ steps.release.outputs.released || steps.tag-release.outputs.released || 'false' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Verify current release tag
+        if: github.ref_type != 'tag' && inputs.ref == ''
         run: |
           if ! git rev-parse --verify --quiet refs/tags/v0.1.1; then
             echo "::error::Tag v0.1.1 must exist because scrape-smith 0.1.1 is the current release."
             echo "::error::Create and push the release tag before running this workflow: git tag v0.1.1 <published-0.1.1-commit> && git push origin v0.1.1"
             exit 1
           fi
+
+      - name: Verify manual release tag
+        if: inputs.ref != ''
+        run: |
+          case "${{ inputs.ref }}" in
+            v*|refs/tags/v*) ;;
+            *)
+              echo "::error::Manual publish ref must be a release tag such as v0.1.1."
+              exit 1
+              ;;
+          esac
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -49,13 +68,21 @@ jobs:
         run: uv sync --locked
 
       - name: Run semantic release
+        if: github.ref_type != 'tag' && inputs.ref == ''
         id: release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run semantic-release -v version
 
+      - name: Build tagged release
+        if: github.ref_type == 'tag' || inputs.ref != ''
+        id: tag-release
+        run: |
+          uv build
+          echo "released=true" >> "$GITHUB_OUTPUT"
+
       - name: Upload distributions
-        if: steps.release.outputs.released == 'true'
+        if: steps.release.outputs.released == 'true' || steps.tag-release.outputs.released == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: python-distributions

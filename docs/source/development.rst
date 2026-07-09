@@ -26,6 +26,12 @@ the Git tag and GitHub Release, build the package with ``uv build``, and upload
 the distribution artifacts to PyPI using trusted publishing. Local
 ``uv publish`` is not part of the release process.
 
+If a release tag already exists but has not been uploaded to PyPI, run the
+``Publish to PyPI`` workflow manually and set ``ref`` to that tag, such as
+``v0.1.1``. The workflow will check out the tag, build the package, and publish
+those artifacts without asking Python Semantic Release to calculate another
+version.
+
 Published versions must have matching Git tags in the remote repository so
 Python Semantic Release can find the correct baseline. The current release is
 ``0.1.1``, so keep ``v0.1.1`` available before running the workflow; without
