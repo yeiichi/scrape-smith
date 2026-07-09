@@ -6,7 +6,7 @@ scraping workflows.
 
 The package currently provides a ``scrape`` command with a table extraction
 tool. It can read HTML from a local file or HTTP(S) URL, extract tables, and
-write CSV or JSON output without printing scraped table data to the terminal.
+write CSV or JSON output to a file while reporting completed work to stdout.
 
 .. code-block:: bash
 

@@ -23,7 +23,7 @@ def test_tables_command_writes_csv_by_default(tmp_path, monkeypatch, capsys) -> 
 
     captured = capsys.readouterr()
     assert exit_code == 0
-    assert captured.out == ""
+    assert captured.out == "Wrote 1 table to page-tables.csv\n"
     assert captured.err == ""
     with (tmp_path / "page-tables.csv").open(encoding="utf-8", newline="") as output_file:
         assert list(csv.reader(output_file)) == [["Name", "Role"], ["Ada", "Engineer"]]
@@ -47,9 +47,57 @@ def test_tables_command_writes_json_file(tmp_path, capsys) -> None:
 
     captured = capsys.readouterr()
     assert exit_code == 0
-    assert captured.out == ""
+    assert captured.out == f"Wrote 1 table to {output_path}\n"
     assert captured.err == ""
     assert json.loads(output_path.read_text(encoding="utf-8")) == [
+        {"caption": "People", "headers": ["Name"], "rows": [["Ada"]]}
+    ]
+
+
+def test_tables_command_quiet_suppresses_success_report(tmp_path, capsys) -> None:
+    html_path = tmp_path / "page.html"
+    output_path = tmp_path / "tables.csv"
+    html_path.write_text(
+        """
+        <table>
+          <tr><th>Name</th></tr>
+          <tr><td>Ada</td></tr>
+        </table>
+        """,
+        encoding="utf-8",
+    )
+
+    exit_code = main(["tables", str(html_path), "-o", str(output_path), "--quiet"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.out == ""
+    assert captured.err == ""
+    with output_path.open(encoding="utf-8", newline="") as output_file:
+        assert list(csv.reader(output_file)) == [["Name"], ["Ada"]]
+
+
+def test_tables_command_writes_json_to_default_file(tmp_path, monkeypatch, capsys) -> None:
+    html_path = tmp_path / "page.html"
+    html_path.write_text(
+        """
+        <table>
+          <caption>People</caption>
+          <tr><th>Name</th></tr>
+          <tr><td>Ada</td></tr>
+        </table>
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = main(["tables", str(html_path), "--format", "json"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.out == "Wrote 1 table to page-tables.json\n"
+    assert captured.err == ""
+    assert json.loads((tmp_path / "page-tables.json").read_text(encoding="utf-8")) == [
         {"caption": "People", "headers": ["Name"], "rows": [["Ada"]]}
     ]
 
@@ -75,7 +123,7 @@ def test_tables_command_writes_multiple_tables_to_one_csv_file(tmp_path, capsys)
 
     captured = capsys.readouterr()
     assert exit_code == 0
-    assert captured.out == ""
+    assert captured.out == f"Wrote 2 tables to {output_path}\n"
     assert captured.err == ""
     with output_path.open(encoding="utf-8", newline="") as output_file:
         assert list(csv.reader(output_file)) == [["Name"], ["Ada"], [], ["Year"], ["2026"]]

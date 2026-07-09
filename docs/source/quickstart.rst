@@ -16,6 +16,12 @@ By default, CSV output is written to a safe source-based filename:
 
    page.html -> page-tables.csv
 
+On success, the command reports what it wrote to stdout:
+
+.. code-block:: text
+
+   Wrote 1 table to page-tables.csv
+
 Extract tables from a URL and choose the output file:
 
 .. code-block:: bash

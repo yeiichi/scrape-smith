@@ -14,7 +14,7 @@ scrape tables <html-file-or-url>
 
 The table tool extracts tables from a local HTML file or HTTP(S) URL and writes
 the result to a file. CSV is the default output format, and successful commands
-do not print table data to the screen.
+print a short report to stdout.
 
 ```bash
 scrape tables page.html
@@ -31,6 +31,16 @@ https://yeiichi.github.io/claim-class-model -> claim-class-model-tables.csv
 
 If the default filename already exists, `scrape` avoids overwriting it by adding
 a numeric suffix, such as `page-tables-2.csv`.
+
+On success, `scrape` reports the written file to stdout:
+
+```text
+Wrote 1 table to page-tables.csv
+```
+
+Use `--quiet` to suppress the success report.
+
+Errors and validation messages are written to stderr.
 
 Python APIs live under `scrape_smith.tools`.
 

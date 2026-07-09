@@ -9,6 +9,7 @@ import re
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TextIO
 from urllib.parse import urlparse
 
 from scrape_smith.tools.tables import HtmlTable
@@ -46,6 +47,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="Output one table by zero-based index.",
     )
+    table_parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress success reports on stdout.",
+    )
     table_parser.set_defaults(func=run_table)
 
     return parser
@@ -63,29 +70,39 @@ def run_table(args: argparse.Namespace) -> int:
 
     output_path = args.output or default_output_path(args.target, args.format)
 
-    if args.format == "json":
-        write_json(tables, output_path)
-        return 0
-
-    write_csv(tables, output_path)
+    with output_path.open("w", encoding="utf-8", newline="") as output_file:
+        write_tables(tables, args.format, output_file)
+    if not args.quiet:
+        print(f"Wrote {len(tables)} {pluralize('table', len(tables))} to {output_path}")
     return 0
 
 
-def write_json(tables: list[HtmlTable], output_path: Path) -> None:
-    with output_path.open("w", encoding="utf-8") as output_file:
-        json.dump([table.to_dict() for table in tables], output_file, ensure_ascii=False, indent=2)
-        output_file.write("\n")
+def write_tables(tables: list[HtmlTable], output_format: str, output_file: TextIO) -> None:
+    if output_format == "json":
+        write_json(tables, output_file)
+    else:
+        write_csv(tables, output_file)
 
 
-def write_csv(tables: list[HtmlTable], output_path: Path) -> None:
-    with output_path.open("w", encoding="utf-8", newline="") as output_file:
-        writer = csv.writer(output_file)
-        for table_index, table in enumerate(tables):
-            if table_index:
-                writer.writerow([])
-            if table.headers:
-                writer.writerow(table.headers)
-            writer.writerows(table.rows)
+def write_json(tables: list[HtmlTable], output_file: TextIO) -> None:
+    json.dump([table.to_dict() for table in tables], output_file, ensure_ascii=False, indent=2)
+    output_file.write("\n")
+
+
+def write_csv(tables: list[HtmlTable], output_file: TextIO) -> None:
+    writer = csv.writer(output_file)
+    for table_index, table in enumerate(tables):
+        if table_index:
+            writer.writerow([])
+        if table.headers:
+            writer.writerow(table.headers)
+        writer.writerows(table.rows)
+
+
+def pluralize(word: str, count: int) -> str:
+    if count == 1:
+        return word
+    return f"{word}s"
 
 
 def default_output_path(target: str, output_format: str) -> Path:
