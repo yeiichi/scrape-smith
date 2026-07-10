@@ -53,6 +53,36 @@ Use the Python API when a script needs table objects instead of files:
    print(first_table.headers)
    print(first_table.rows)
 
+Convert body content from one HTML page to JSONL:
+
+.. code-block:: bash
+
+   scrape content page.html
+
+The content command extracts text from headings, paragraphs, links, list items,
+table cells, block quotes, figure captions, definition lists, labels, and
+buttons inside the ``body`` element, then writes one JSON object per line:
+
+.. code-block:: json
+
+   {"h1": "Title"}
+   {"p": "Hello docs."}
+   {"a": "docs", "href": "/docs"}
+
+By default, JSONL output is written to a safe source-based filename:
+
+.. code-block:: text
+
+   page.html -> page-content.jsonl
+
+Use the Python API when a script needs the records directly:
+
+.. code-block:: python
+
+   from scrape_smith.tools.content import extract_content_records
+
+   records = extract_content_records("page.html")
+
 Download files from a URL list:
 
 .. code-block:: bash

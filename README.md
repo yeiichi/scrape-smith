@@ -6,8 +6,8 @@
 
 No-dependency Python utilities for scraping workflows.
 
-The package provides a `scrape` command with tools for table extraction and
-polite file downloads.
+The package provides a `scrape` command with tools for table extraction, body
+content JSONL conversion, and polite file downloads.
 
 ## Installation
 
@@ -47,6 +47,29 @@ Wrote 1 table to page-tables.csv
 
 Use `--quiet` to suppress the success report.
 
+Convert body content from one HTML page to JSONL:
+
+```bash
+scrape content page.html
+scrape content https://example.com/page.html
+```
+
+The content command reads a local HTML file or HTTP(S) URL, extracts visible
+text from the `<body>`, ignores metadata-like elements such as `<script>`, and
+writes one JSON object per line for headings (`h1`–`h6`), paragraphs (`p`), links (`a`), list items (`li`), table cells (`td`, `th`), block quotes (`blockquote`), figure captions (`figcaption`), definition terms and descriptions (`dt`, `dd`), table captions (`caption`), labels (`label`), and buttons (`button`):
+
+```json
+{"h1": "Title"}
+{"p": "Hello docs."}
+{"a": "docs", "href": "/docs"}
+```
+
+Without `-o`, JSONL output is written to a safe source-based filename:
+
+```text
+page.html -> page-content.jsonl
+```
+
 Download target files from a URL list:
 
 ```bash
@@ -77,6 +100,7 @@ The command-line entry point is `scrape`.
 
 ```bash
 scrape tables <html-file-or-url> [--format csv|json] [-o OUTPUT] [--index N] [--quiet]
+scrape content <html-file-or-url> [-o OUTPUT] [--quiet]
 scrape download <url-list-path> [-o OUTPUT_DIR] [--delay SECONDS]
 ```
 
@@ -113,6 +137,12 @@ from scrape_smith.tools.downloads import download_files
 
 summary = download_files("urls.txt", delay_seconds=1)
 print(summary.downloaded_count)
+```
+
+```python
+from scrape_smith.tools.content import extract_content_records
+
+records = extract_content_records("page.html")
 ```
 
 ## Documentation

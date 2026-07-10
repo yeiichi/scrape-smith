@@ -7,7 +7,7 @@ The command-line entry point is ``scrape``.
 
    scrape <command> [options]
 
-The available commands are ``tables`` and ``download``.
+The available commands are ``tables``, ``content``, and ``download``.
 
 ``scrape tables``
 -----------------
@@ -53,6 +53,49 @@ Examples
 Successful commands write table data to a file and print a short report to
 stdout, such as ``Wrote 1 table to page-tables.csv``. Use ``--quiet`` to
 suppress that report. Errors and validation messages are written to stderr.
+
+``scrape content``
+------------------
+
+Convert visible HTML body content from one page to JSONL.
+
+.. code-block:: bash
+
+   scrape content <html-file-or-url> [-o OUTPUT] [--quiet]
+
+Arguments and options:
+
+``target``
+   Local HTML file path or HTTP(S) URL.
+
+``-o``, ``--output``
+   Output JSONL file path. When omitted, scrape-smith writes to a safe filename
+   based on the source, such as ``page-content.jsonl``.
+
+``-q``, ``--quiet``
+   Suppress success reports on stdout.
+
+The content command reads text from the ``body`` element, skips metadata-like
+elements such as ``script``, ``style``, ``template``, and ``noscript``, and
+writes one JSON object per line for ``h1`` through ``h6``, ``p``, and ``a``
+elements. Link records include ``href`` when present.
+
+Examples
+--------
+
+.. code-block:: bash
+
+   scrape content page.html
+   scrape content page.html -o content.jsonl
+   scrape content https://example.com/page.html
+
+Example JSONL output:
+
+.. code-block:: json
+
+   {"h1": "Title"}
+   {"p": "Hello docs."}
+   {"a": "docs", "href": "/docs"}
 
 ``scrape download``
 -------------------

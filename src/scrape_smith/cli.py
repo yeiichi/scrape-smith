@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import TextIO
 from urllib.parse import urlparse
 
+from scrape_smith.tools.content import extract_content_records
+from scrape_smith.tools.content import write_jsonl
 from scrape_smith.tools.downloads import DEFAULT_DELAY_SECONDS
 from scrape_smith.tools.downloads import download_files
 from scrape_smith.tools.tables import HtmlTable
@@ -80,6 +82,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     download_parser.set_defaults(func=run_download)
 
+    content_parser = subparsers.add_parser(
+        "content",
+        help="Convert HTML body content to JSONL.",
+    )
+    content_parser.add_argument("target", help="HTML file path or HTTP(S) URL.")
+    content_parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Output JSONL file path. Defaults to a safe source-based filename.",
+    )
+    content_parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress success reports on stdout.",
+    )
+    content_parser.set_defaults(func=run_content)
+
     return parser
 
 
@@ -112,6 +133,17 @@ def run_download(args: argparse.Namespace) -> int:
     return 1 if summary.failed_count else 0
 
 
+def run_content(args: argparse.Namespace) -> int:
+    records = extract_content_records(args.target)
+    output_path = args.output or default_content_output_path(args.target)
+
+    with output_path.open("w", encoding="utf-8") as output_file:
+        write_jsonl(records, output_file)
+    if not args.quiet:
+        print(f"Wrote {len(records)} {pluralize('record', len(records))} to {output_path}")
+    return 0
+
+
 def write_tables(tables: list[HtmlTable], output_format: str, output_file: TextIO) -> None:
     if output_format == "json":
         write_json(tables, output_file)
@@ -142,6 +174,10 @@ def pluralize(word: str, count: int) -> str:
 
 def default_output_path(target: str, output_format: str) -> Path:
     return available_output_path(f"{source_slug(target)}-tables", output_format)
+
+
+def default_content_output_path(target: str) -> Path:
+    return available_output_path(f"{source_slug(target)}-content", "jsonl")
 
 
 def available_output_path(stem: str, suffix: str) -> Path:

@@ -11,6 +11,14 @@ Table helpers
    :undoc-members:
    :show-inheritance:
 
+Content helpers
+---------------
+
+.. automodule:: scrape_smith.tools.content
+   :members: extract_content_records, extract_content_records_from_html, write_jsonl
+   :undoc-members:
+   :show-inheritance:
+
 Download helpers
 ----------------
 

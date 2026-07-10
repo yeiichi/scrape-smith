@@ -3,6 +3,7 @@ import json
 from io import BytesIO
 
 from scrape_smith.tools import downloads
+from scrape_smith.cli import default_content_output_path
 from scrape_smith.cli import default_output_path
 from scrape_smith.cli import main
 from scrape_smith.cli import source_slug
@@ -151,6 +152,17 @@ def test_default_output_path_avoids_overwriting_existing_files(tmp_path, monkeyp
     assert default_output_path("page.html", "csv").name == "page-tables-3.csv"
 
 
+def test_default_content_output_path_avoids_overwriting_existing_files(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "page-content.jsonl").write_text("old\n", encoding="utf-8")
+    (tmp_path / "page-content-2.jsonl").write_text("older\n", encoding="utf-8")
+
+    assert default_content_output_path("page.html").name == "page-content-3.jsonl"
+
+
 def test_source_slug_uses_safe_source_names() -> None:
     assert source_slug("https://yeiichi.github.io/claim-class-model") == "claim-class-model"
     assert source_slug("https://example.com/") == "example.com"
@@ -181,3 +193,32 @@ def test_download_command_reports_important_events(tmp_path, monkeypatch, capsys
         "End download run: 1 downloaded, 0 skipped, 0 failed\n"
     )
     assert (tmp_path / "urls-downloads" / "report.pdf").read_bytes() == b"%PDF"
+
+
+def test_content_command_writes_jsonl_by_default(tmp_path, monkeypatch, capsys) -> None:
+    html_path = tmp_path / "page.html"
+    html_path.write_text(
+        """
+        <html>
+          <body>
+            <h1>Title</h1>
+            <p>Hello <a href="/docs">docs</a>.</p>
+          </body>
+        </html>
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = main(["content", str(html_path)])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.err == ""
+    assert captured.out == "Wrote 3 records to page-content.jsonl\n"
+    lines = (tmp_path / "page-content.jsonl").read_text(encoding="utf-8").splitlines()
+    assert [json.loads(line) for line in lines] == [
+        {"h1": "Title"},
+        {"p": "Hello docs."},
+        {"a": "docs", "href": "/docs"},
+    ]
