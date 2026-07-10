@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.3.0 (2026-07-10)
+
+### Chores
+
+- Ignore CLI output files in git
+  ([`dd7efff`](https://github.com/yeiichi/scrape-smith/commit/dd7efff35dcf616673c6311d715389ff28413fcf))
+
+### Features
+
+- Add list extraction and three-in-one extract command
+  ([`ab6c107`](https://github.com/yeiichi/scrape-smith/commit/ab6c107bd9ed0264065dbd6752b588a3cb20e29e))
+
+
 ## v0.2.0 (2026-07-10)
 
 ### Continuous Integration

@@ -1,6 +1,6 @@
 [project]
 name = "scrape-smith"
-version = "0.2.0"
+version = "0.3.0"
 description = "Small scraping utilities for CLI and Python workflows."
 readme = "README.md"
 authors = [
