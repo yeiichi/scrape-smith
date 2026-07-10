@@ -39,6 +39,21 @@ docs/build/
 .env.*
 !.env.example
 
+# scrape-smith CLI output files
+*-tables.csv
+*-tables-*.csv
+*-tables.json
+*-tables-*.json
+*-lists.csv
+*-lists-*.csv
+*-lists.json
+*-lists-*.json
+*-content.jsonl
+*-content-*.jsonl
+*-extract.jsonl
+*-extract-*.jsonl
+*-downloads/
+
 # Tooling and editor state
 .idea/
 .vscode/
