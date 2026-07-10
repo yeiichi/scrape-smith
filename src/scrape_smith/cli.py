@@ -14,8 +14,13 @@ from urllib.parse import urlparse
 
 from scrape_smith.tools.content import extract_content_records
 from scrape_smith.tools.content import write_jsonl
+from scrape_smith.tools.extract import extract_all
+from scrape_smith.tools.extract import write_jsonl as write_extract_jsonl
 from scrape_smith.tools.downloads import DEFAULT_DELAY_SECONDS
 from scrape_smith.tools.downloads import download_files
+from scrape_smith.tools.lists import HtmlDefinitionList
+from scrape_smith.tools.lists import HtmlList
+from scrape_smith.tools.lists import extract_lists
 from scrape_smith.tools.tables import HtmlTable
 from scrape_smith.tools.tables import extract_tables
 
@@ -101,6 +106,47 @@ def build_parser() -> argparse.ArgumentParser:
     )
     content_parser.set_defaults(func=run_content)
 
+    list_parser = subparsers.add_parser("lists", help="Extract lists from HTML.")
+    list_parser.add_argument("target", help="HTML file path or HTTP(S) URL.")
+    list_parser.add_argument(
+        "--format",
+        choices=("json", "csv"),
+        default="csv",
+        help="Output file format. Defaults to csv.",
+    )
+    list_parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Output file path. Defaults to a safe source-based filename.",
+    )
+    list_parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress success reports on stdout.",
+    )
+    list_parser.set_defaults(func=run_list)
+
+    three_parser = subparsers.add_parser(
+        "three",
+        help="Extract content, tables, and lists from HTML into one JSONL file.",
+    )
+    three_parser.add_argument("target", help="HTML file path or HTTP(S) URL.")
+    three_parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Output JSONL file path. Defaults to a safe source-based filename.",
+    )
+    three_parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress success reports on stdout.",
+    )
+    three_parser.set_defaults(func=run_three)
+
     return parser
 
 
@@ -133,6 +179,28 @@ def run_download(args: argparse.Namespace) -> int:
     return 1 if summary.failed_count else 0
 
 
+def run_three(args: argparse.Namespace) -> int:
+    records = extract_all(args.target)
+    output_path = args.output or default_three_output_path(args.target)
+
+    with output_path.open("w", encoding="utf-8") as output_file:
+        write_extract_jsonl(records, output_file)
+    if not args.quiet:
+        print(f"Wrote {len(records)} {pluralize('record', len(records))} to {output_path}")
+    return 0
+
+
+def run_list(args: argparse.Namespace) -> int:
+    lists = extract_lists(args.target)
+    output_path = args.output or default_lists_output_path(args.target, args.format)
+
+    with output_path.open("w", encoding="utf-8", newline="") as output_file:
+        write_lists(lists, args.format, output_file)
+    if not args.quiet:
+        print(f"Wrote {len(lists)} {pluralize('list', len(lists))} to {output_path}")
+    return 0
+
+
 def run_content(args: argparse.Namespace) -> int:
     records = extract_content_records(args.target)
     output_path = args.output or default_content_output_path(args.target)
@@ -142,6 +210,24 @@ def run_content(args: argparse.Namespace) -> int:
     if not args.quiet:
         print(f"Wrote {len(records)} {pluralize('record', len(records))} to {output_path}")
     return 0
+
+
+def write_lists(
+    lists: list[HtmlList | HtmlDefinitionList], output_format: str, output_file: TextIO
+) -> None:
+    if output_format == "json":
+        json.dump([lst.to_dict() for lst in lists], output_file, ensure_ascii=False, indent=2)
+        output_file.write("\n")
+    else:
+        writer = csv.writer(output_file)
+        for list_index, lst in enumerate(lists):
+            if list_index:
+                writer.writerow([])
+            if isinstance(lst, HtmlDefinitionList):
+                writer.writerow(["term", "description"])
+                writer.writerows([item["term"], item["description"]] for item in lst.items)
+            else:
+                writer.writerows([[item] for item in lst.items])
 
 
 def write_tables(tables: list[HtmlTable], output_format: str, output_file: TextIO) -> None:
@@ -174,6 +260,14 @@ def pluralize(word: str, count: int) -> str:
 
 def default_output_path(target: str, output_format: str) -> Path:
     return available_output_path(f"{source_slug(target)}-tables", output_format)
+
+
+def default_three_output_path(target: str) -> Path:
+    return available_output_path(f"{source_slug(target)}-extract", "jsonl")
+
+
+def default_lists_output_path(target: str, output_format: str) -> Path:
+    return available_output_path(f"{source_slug(target)}-lists", output_format)
 
 
 def default_content_output_path(target: str) -> Path:

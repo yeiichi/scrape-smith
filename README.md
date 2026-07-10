@@ -6,8 +6,9 @@
 
 No-dependency Python utilities for scraping workflows.
 
-The package provides a `scrape` command with tools for table extraction, body
-content JSONL conversion, and polite file downloads.
+The package provides a `scrape` command with tools for table extraction, list
+extraction, body content JSONL conversion, combined three-in-one extraction,
+and polite file downloads.
 
 ## Installation
 
@@ -47,6 +48,24 @@ Wrote 1 table to page-tables.csv
 
 Use `--quiet` to suppress the success report.
 
+Extract lists from an HTML page:
+
+```bash
+scrape lists page.html
+scrape lists https://example.com/page.html
+```
+
+The lists command reads a local HTML file or HTTP(S) URL and extracts `ul`,
+`ol`, and `dl` elements. Ordered and unordered lists produce a single item
+column in CSV. Definition lists produce two columns, `term` and `description`.
+Multiple lists are separated by blank rows.
+
+Without `-o`, CSV output is written to a safe source-based filename:
+
+```text
+page.html -> page-lists.csv
+```
+
 Convert body content from one HTML page to JSONL:
 
 ```bash
@@ -68,6 +87,29 @@ Without `-o`, JSONL output is written to a safe source-based filename:
 
 ```text
 page.html -> page-content.jsonl
+```
+
+Extract all three in source order into one JSONL file:
+
+```bash
+scrape three page.html
+scrape three https://example.com/page.html
+```
+
+The `three` command runs content, table, and list extraction in a single pass
+and writes every record to one JSONL file in document order. Each line is a
+`{"type": ..., "data": ...}` object where `data` is a JSON string:
+
+```json
+{"type": "content", "data": "{\"tag\": \"h1\", \"text\": \"Title\"}"}
+{"type": "list",    "data": "{\"tag\": \"ul\", \"items\": [\"Alpha\", \"Beta\"]}"}
+{"type": "table",   "data": "{\"caption\": null, \"headers\": [\"Name\"], \"rows\": [[\"Ada\"]]}"}
+```
+
+Without `-o`, output is written to a safe source-based filename:
+
+```text
+page.html -> page-extract.jsonl
 ```
 
 Download target files from a URL list:
@@ -100,7 +142,9 @@ The command-line entry point is `scrape`.
 
 ```bash
 scrape tables <html-file-or-url> [--format csv|json] [-o OUTPUT] [--index N] [--quiet]
+scrape lists <html-file-or-url> [--format csv|json] [-o OUTPUT] [--quiet]
 scrape content <html-file-or-url> [-o OUTPUT] [--quiet]
+scrape three <html-file-or-url> [-o OUTPUT] [--quiet]
 scrape download <url-list-path> [-o OUTPUT_DIR] [--delay SECONDS]
 ```
 
@@ -137,6 +181,18 @@ from scrape_smith.tools.downloads import download_files
 
 summary = download_files("urls.txt", delay_seconds=1)
 print(summary.downloaded_count)
+```
+
+```python
+from scrape_smith.tools.lists import extract_lists
+
+lists = extract_lists("page.html")
+```
+
+```python
+from scrape_smith.tools.extract import extract_all
+
+records = extract_all("page.html")
 ```
 
 ```python

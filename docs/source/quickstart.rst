@@ -53,6 +53,35 @@ Use the Python API when a script needs table objects instead of files:
    print(first_table.headers)
    print(first_table.rows)
 
+Extract lists from an HTML page:
+
+.. code-block:: bash
+
+   scrape lists page.html
+
+The lists command extracts ``ul``, ``ol``, and ``dl`` elements. Ordered and
+unordered lists produce a single item column in CSV. Definition lists produce
+two columns, ``term`` and ``description``:
+
+.. code-block:: text
+
+   Alpha
+   Beta
+
+By default, CSV output is written to a safe source-based filename:
+
+.. code-block:: text
+
+   page.html -> page-lists.csv
+
+Use the Python API when a script needs the list objects directly:
+
+.. code-block:: python
+
+   from scrape_smith.tools.lists import extract_lists
+
+   lists = extract_lists("page.html")
+
 Convert body content from one HTML page to JSONL:
 
 .. code-block:: bash
@@ -82,6 +111,36 @@ Use the Python API when a script needs the records directly:
    from scrape_smith.tools.content import extract_content_records
 
    records = extract_content_records("page.html")
+
+Extract all three in source order into one JSONL file:
+
+.. code-block:: bash
+
+   scrape three page.html
+
+The ``three`` command runs a single parser pass and writes every content
+element, table, and list as a ``{"type": ..., "data": ...}`` record, preserving
+document order:
+
+.. code-block:: json
+
+   {"type": "content", "data": "{\"tag\": \"h1\", \"text\": \"Title\"}"}
+   {"type": "list",    "data": "{\"tag\": \"ul\", \"items\": [\"Alpha\"]}"}
+   {"type": "table",   "data": "{\"caption\": null, \"headers\": [\"Name\"], \"rows\": [[\"Ada\"]]}"}
+
+By default, output is written to a safe source-based filename:
+
+.. code-block:: text
+
+   page.html -> page-extract.jsonl
+
+Use the Python API when a script needs the records directly:
+
+.. code-block:: python
+
+   from scrape_smith.tools.extract import extract_all
+
+   records = extract_all("page.html")
 
 Download files from a URL list:
 

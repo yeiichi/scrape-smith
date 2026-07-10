@@ -11,11 +11,27 @@ Table helpers
    :undoc-members:
    :show-inheritance:
 
+List helpers
+------------
+
+.. automodule:: scrape_smith.tools.lists
+   :members: HtmlList, HtmlDefinitionList, extract_lists, extract_lists_from_html
+   :undoc-members:
+   :show-inheritance:
+
 Content helpers
 ---------------
 
 .. automodule:: scrape_smith.tools.content
    :members: extract_content_records, extract_content_records_from_html, write_jsonl
+   :undoc-members:
+   :show-inheritance:
+
+Extract helpers (three-in-one)
+------------------------------
+
+.. automodule:: scrape_smith.tools.extract
+   :members: extract_all, extract_all_from_html, write_jsonl
    :undoc-members:
    :show-inheritance:
 

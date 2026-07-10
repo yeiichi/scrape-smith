@@ -7,7 +7,7 @@ The command-line entry point is ``scrape``.
 
    scrape <command> [options]
 
-The available commands are ``tables``, ``content``, and ``download``.
+The available commands are ``tables``, ``lists``, ``content``, ``three``, and ``download``.
 
 ``scrape tables``
 -----------------
@@ -54,6 +54,63 @@ Successful commands write table data to a file and print a short report to
 stdout, such as ``Wrote 1 table to page-tables.csv``. Use ``--quiet`` to
 suppress that report. Errors and validation messages are written to stderr.
 
+``scrape lists``
+----------------
+
+Extract lists from a local HTML file or an HTTP(S) URL.
+
+.. code-block:: bash
+
+   scrape lists <html-file-or-url> [--format csv|json] [-o OUTPUT] [--quiet]
+
+Arguments and options:
+
+``target``
+   Local HTML file path or HTTP(S) URL.
+
+``--format``
+   Output format. Supported values are ``csv`` and ``json``. The default is
+   ``csv``.
+
+``-o``, ``--output``
+   Output file path. When omitted, scrape-smith writes to a safe filename based
+   on the source, such as ``page-lists.csv``.
+
+``-q``, ``--quiet``
+   Suppress success reports on stdout.
+
+Ordered (``ol``) and unordered (``ul``) lists are written as a single column
+of items. Definition lists (``dl``) are written with two columns, ``term`` and
+``description``. Multiple lists in one document are separated by blank rows in
+CSV output. In JSON output each list is an object with a ``tag`` key and an
+``items`` key.
+
+Examples
+--------
+
+.. code-block:: bash
+
+   scrape lists page.html
+   scrape lists page.html -o lists.csv
+   scrape lists page.html --format json -o lists.json
+   scrape lists https://example.com/page.html
+
+Example CSV output for ``ul``/``ol``:
+
+.. code-block:: text
+
+   Alpha
+   Beta
+   Gamma
+
+Example CSV output for ``dl``:
+
+.. code-block:: text
+
+   term,description
+   Python,A programming language.
+   HTML,A markup language.
+
 ``scrape content``
 ------------------
 
@@ -96,6 +153,50 @@ Example JSONL output:
    {"h1": "Title"}
    {"p": "Hello docs."}
    {"a": "docs", "href": "/docs"}
+
+``scrape three``
+----------------
+
+Run content, table, and list extraction in a single pass and write all records
+to one JSONL file in document order.
+
+.. code-block:: bash
+
+   scrape three <html-file-or-url> [-o OUTPUT] [--quiet]
+
+Arguments and options:
+
+``target``
+   Local HTML file path or HTTP(S) URL.
+
+``-o``, ``--output``
+   Output JSONL file path. When omitted, scrape-smith writes to a safe filename
+   based on the source, such as ``page-extract.jsonl``.
+
+``-q``, ``--quiet``
+   Suppress success reports on stdout.
+
+Each output line is a ``{"type": ..., "data": ...}`` JSON object.
+``type`` is one of ``"content"``, ``"table"``, or ``"list"``.
+``data`` is a JSON string with the record payload, making the top-level schema
+a consistent two-column structure suitable for BigQuery.
+
+Example output:
+
+.. code-block:: json
+
+   {"type": "content", "data": "{\"tag\": \"h1\", \"text\": \"Title\"}"}
+   {"type": "list",    "data": "{\"tag\": \"ul\", \"items\": [\"Alpha\"]}"}
+   {"type": "table",   "data": "{\"caption\": null, \"headers\": [\"Name\"], \"rows\": [[\"Ada\"]]}"}
+
+Examples
+--------
+
+.. code-block:: bash
+
+   scrape three page.html
+   scrape three page.html -o extract.jsonl
+   scrape three https://example.com/page.html
 
 ``scrape download``
 -------------------
