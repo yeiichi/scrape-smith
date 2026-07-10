@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import TextIO
 from urllib.parse import urlparse
 
+from scrape_smith.tools.downloads import DEFAULT_DELAY_SECONDS
+from scrape_smith.tools.downloads import download_files
 from scrape_smith.tools.tables import HtmlTable
 from scrape_smith.tools.tables import extract_tables
 
@@ -55,6 +57,29 @@ def build_parser() -> argparse.ArgumentParser:
     )
     table_parser.set_defaults(func=run_table)
 
+    download_parser = subparsers.add_parser(
+        "download",
+        help="Download target files from a URL list.",
+    )
+    download_parser.add_argument(
+        "url_list",
+        type=Path,
+        help="Text file containing one URL per line.",
+    )
+    download_parser.add_argument(
+        "-o",
+        "--output-dir",
+        type=Path,
+        help="Output directory. Defaults to a safe name based on the URL list file.",
+    )
+    download_parser.add_argument(
+        "--delay",
+        type=float,
+        default=DEFAULT_DELAY_SECONDS,
+        help=f"Seconds to wait between requests. Defaults to {DEFAULT_DELAY_SECONDS:g}.",
+    )
+    download_parser.set_defaults(func=run_download)
+
     return parser
 
 
@@ -75,6 +100,16 @@ def run_table(args: argparse.Namespace) -> int:
     if not args.quiet:
         print(f"Wrote {len(tables)} {pluralize('table', len(tables))} to {output_path}")
     return 0
+
+
+def run_download(args: argparse.Namespace) -> int:
+    summary = download_files(
+        args.url_list,
+        args.output_dir,
+        delay_seconds=args.delay,
+        reporter=print,
+    )
+    return 1 if summary.failed_count else 0
 
 
 def write_tables(tables: list[HtmlTable], output_format: str, output_file: TextIO) -> None:

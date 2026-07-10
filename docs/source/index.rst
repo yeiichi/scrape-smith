@@ -4,18 +4,17 @@ scrape-smith
 scrape-smith is a small collection of no-dependency Python utilities for
 scraping workflows.
 
-The package currently provides a ``scrape`` command with a table extraction
-tool. It can read HTML from a local file or HTTP(S) URL, extract tables, and
-write CSV or JSON output to a file while reporting completed work to stdout.
+The package provides a ``scrape`` command with tools for table extraction and
+polite file downloads.
 
 .. code-block:: bash
 
    scrape tables page.html
    scrape tables https://example.com/page.html -o result.csv
    scrape tables page.html --format json -o tables.json
+   scrape download urls.txt
 
-The Python API exposes the same table extraction behavior for scripts and
-automation.
+The Python API exposes the same behavior for scripts and automation.
 
 Getting Started
 ---------------
@@ -34,6 +33,7 @@ Tools
    :maxdepth: 1
 
    tools/tables
+   tools/downloads
 
 Python API
 ----------

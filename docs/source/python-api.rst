@@ -1,13 +1,21 @@
 Python API
 ==========
 
-The public Python API currently lives in ``scrape_smith.tools.tables``.
+The public Python API currently lives under ``scrape_smith.tools``.
 
 Table helpers
 -------------
 
 .. automodule:: scrape_smith.tools.tables
    :members: HtmlTable, extract_tables, extract_tables_from_html, read_html
+   :undoc-members:
+   :show-inheritance:
+
+Download helpers
+----------------
+
+.. automodule:: scrape_smith.tools.downloads
+   :members: DownloadResult, DownloadSummary, download_files, download_url, read_url_list
    :undoc-members:
    :show-inheritance:
 

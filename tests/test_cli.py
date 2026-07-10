@@ -1,9 +1,23 @@
 import csv
 import json
+from io import BytesIO
 
+from scrape_smith.tools import downloads
 from scrape_smith.cli import default_output_path
 from scrape_smith.cli import main
 from scrape_smith.cli import source_slug
+
+
+class FakeResponse(BytesIO):
+    def __init__(self, body: bytes, headers: dict[str, str] | None = None) -> None:
+        super().__init__(body)
+        self.headers = headers or {}
+
+    def __enter__(self) -> "FakeResponse":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
 
 
 def test_tables_command_writes_csv_by_default(tmp_path, monkeypatch, capsys) -> None:
@@ -141,3 +155,29 @@ def test_source_slug_uses_safe_source_names() -> None:
     assert source_slug("https://yeiichi.github.io/claim-class-model") == "claim-class-model"
     assert source_slug("https://example.com/") == "example.com"
     assert source_slug("My Weird: Report?.html") == "my-weird-report"
+
+
+def test_download_command_reports_important_events(tmp_path, monkeypatch, capsys) -> None:
+    url_list = tmp_path / "urls.txt"
+    url_list.write_text("https://example.com/report.pdf\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    def fake_urlopen(request, timeout):  # noqa: ANN001
+        return FakeResponse(b"%PDF")
+
+    monkeypatch.setattr(downloads, "urlopen", fake_urlopen)
+
+    exit_code = main(["download", str(url_list), "--delay", "0"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.err == ""
+    assert captured.out == (
+        "Start download run: 1 URL(s)\n"
+        "Output directory: urls-downloads\n"
+        "Warning: Treat downloaded files as untrusted. "
+        "Scan them before opening, and do not open files blindly.\n"
+        "Downloaded https://example.com/report.pdf -> urls-downloads/report.pdf\n"
+        "End download run: 1 downloaded, 0 skipped, 0 failed\n"
+    )
+    assert (tmp_path / "urls-downloads" / "report.pdf").read_bytes() == b"%PDF"

@@ -7,7 +7,7 @@ The command-line entry point is ``scrape``.
 
    scrape <command> [options]
 
-Currently, the available command is ``tables``.
+The available commands are ``tables`` and ``download``.
 
 ``scrape tables``
 -----------------
@@ -53,3 +53,48 @@ Examples
 Successful commands write table data to a file and print a short report to
 stdout, such as ``Wrote 1 table to page-tables.csv``. Use ``--quiet`` to
 suppress that report. Errors and validation messages are written to stderr.
+
+``scrape download``
+-------------------
+
+Download target files from a text file containing one URL per line.
+
+.. code-block:: bash
+
+   scrape download <url-list-path> [-o OUTPUT_DIR] [--delay SECONDS]
+
+Arguments and options:
+
+``url_list``
+   Text file containing one URL per line. Blank lines and lines starting with
+   ``#`` are ignored.
+
+``-o``, ``--output-dir``
+   Output directory. When omitted, scrape-smith creates a safe directory name
+   based on the URL list file, such as ``urls-downloads``.
+
+``--delay``
+   Seconds to wait between requests. The default is ``1``.
+
+Target files are CSV, PDF, DOCX, XLSX, and PPTX. scrape-smith downloads URLs
+sequentially, keeps original filenames when possible, avoids overwriting
+existing files, and skips non-target URLs.
+
+.. warning::
+
+   Treat downloaded files as untrusted. Scan them before opening, and do not
+   open files blindly; documents and spreadsheets can contain harmful content.
+
+Examples
+--------
+
+.. code-block:: bash
+
+   scrape download urls.txt
+   scrape download urls.txt -o files
+   scrape download urls.txt --delay 2
+
+Successful commands print important events to stdout, including the start,
+output directory, safety warning, each downloaded/skipped/failed URL, and the
+final summary. If any download fails, the command finishes the list and exits
+with status code ``1``.

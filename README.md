@@ -6,9 +6,8 @@
 
 No-dependency Python utilities for scraping workflows.
 
-The package currently provides a `scrape` command with a table extraction tool.
-It can read HTML from a local file or HTTP(S) URL, extract tables, and write CSV
-or JSON output to a file.
+The package provides a `scrape` command with tools for table extraction and
+polite file downloads.
 
 ## Installation
 
@@ -48,12 +47,37 @@ Wrote 1 table to page-tables.csv
 
 Use `--quiet` to suppress the success report.
 
+Download target files from a URL list:
+
+```bash
+scrape download /path/to/urls.txt
+```
+
+The URL list should contain one URL per line. Blank lines and lines starting
+with `#` are ignored. scrape-smith downloads CSV, PDF, DOCX, XLSX, and PPTX files
+sequentially, waits between requests by default, and skips non-target URLs.
+
+Without `-o`, files are saved under a collision-safe directory based on the URL
+list filename:
+
+```text
+urls.txt -> urls-downloads/
+```
+
+Downloaded files keep their original filenames when the URL or response headers
+provide one. If no filename is available, scrape-smith falls back to a fixed-width
+epoch filename such as `1700000000123.pdf`.
+
+Warning: treat downloaded files as untrusted. Scan them before opening, and do
+not open files blindly; documents and spreadsheets can contain harmful content.
+
 ## Command Line
 
 The command-line entry point is `scrape`.
 
 ```bash
 scrape tables <html-file-or-url> [--format csv|json] [-o OUTPUT] [--index N] [--quiet]
+scrape download <url-list-path> [-o OUTPUT_DIR] [--delay SECONDS]
 ```
 
 Options:
@@ -62,6 +86,11 @@ Options:
 - `-o`, `--output`: output file path; defaults to a safe source-based filename
 - `--index`: write one table by zero-based index
 - `-q`, `--quiet`: suppress success reports on stdout
+
+Download options:
+
+- `-o`, `--output-dir`: output directory; defaults to a safe URL-list-based name
+- `--delay`: seconds to wait between requests; defaults to `1`
 
 Errors and validation messages are written to stderr. If `--index` is out of
 range, the command exits with status code `2`.
@@ -78,6 +107,13 @@ tables = extract_tables("page.html")
 
 Each extracted table has `caption`, `headers`, and `rows` fields. JSON output
 uses the same shape.
+
+```python
+from scrape_smith.tools.downloads import download_files
+
+summary = download_files("urls.txt", delay_seconds=1)
+print(summary.downloaded_count)
+```
 
 ## Documentation
 
