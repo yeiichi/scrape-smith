@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.3.1 (2026-07-11)
+
+### Bug Fixes
+
+- Preserve non-ascii scrape text and filenames
+  ([`5523d53`](https://github.com/yeiichi/scrape-smith/commit/5523d532de0efa3cf9cfc646df4e964e55c0f12c))
+
+
 ## v0.3.0 (2026-07-10)
 
 ### Chores
