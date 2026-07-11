@@ -13,8 +13,9 @@ Supported sources
 - an HTTP or HTTPS URL
 
 Remote requests use a ``scrape-smith/<version>`` user agent and a 30-second timeout.
-The response charset is read from the HTTP headers when available, otherwise
-UTF-8 is used.
+HTML bytes are decoded with charset hints from byte-order marks, HTTP headers,
+and HTML metadata. When no charset can be determined, scrape-smith tries UTF-8
+and common Japanese encodings before falling back to replacement characters.
 
 Output model
 ------------

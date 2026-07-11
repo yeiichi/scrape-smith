@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
@@ -9,6 +10,20 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from scrape_smith import __version__
+
+_META_CHARSET_PATTERN = re.compile(
+    rb"<meta\s+[^>]*charset\s*=\s*['\"]?\s*([A-Za-z0-9._:-]+)",
+    re.IGNORECASE,
+)
+_META_CONTENT_CHARSET_PATTERN = re.compile(
+    rb"<meta\s+[^>]*content\s*=\s*['\"][^'\"]*charset\s*=\s*([A-Za-z0-9._:-]+)",
+    re.IGNORECASE,
+)
+_UTF8_BOMS = (b"\xef\xbb\xbf",)
+_UTF16_BOMS = {
+    b"\xff\xfe": "utf-16-le",
+    b"\xfe\xff": "utf-16-be",
+}
 
 
 @dataclass(frozen=True)
@@ -51,10 +66,67 @@ def read_html(target: str | Path) -> str:
     if parsed.scheme in {"http", "https"}:
         request = Request(target_text, headers={"User-Agent": f"scrape-smith/{__version__}"})
         with urlopen(request, timeout=30) as response:
-            charset = response.headers.get_content_charset() or "utf-8"
-            return response.read().decode(charset, errors="replace")
+            charset = response.headers.get_content_charset()
+            return decode_html(response.read(), header_charset=charset)
 
-    return Path(target).read_text(encoding="utf-8")
+    return decode_html(Path(target).read_bytes())
+
+
+def decode_html(data: bytes, *, header_charset: str | None = None) -> str:
+    """Decode HTML bytes using BOMs, headers, meta charset hints, and safe fallbacks."""
+
+    bom_charset = _bom_charset(data)
+    if bom_charset:
+        return data.decode(bom_charset, errors="replace")
+
+    candidates = [
+        header_charset,
+        _meta_charset(data),
+        "utf-8",
+        "cp932",
+        "shift_jis",
+        "euc_jp",
+    ]
+    seen: set[str] = set()
+    for charset in candidates:
+        if not charset:
+            continue
+        normalized = _normalize_charset(charset)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        try:
+            return data.decode(normalized)
+        except (LookupError, UnicodeDecodeError):
+            continue
+
+    return data.decode("utf-8", errors="replace")
+
+
+def _bom_charset(data: bytes) -> str | None:
+    if data.startswith(_UTF8_BOMS):
+        return "utf-8-sig"
+    for bom, charset in _UTF16_BOMS.items():
+        if data.startswith(bom):
+            return charset
+    return None
+
+
+def _meta_charset(data: bytes) -> str | None:
+    head = data[:4096]
+    match = _META_CHARSET_PATTERN.search(head)
+    if not match:
+        match = _META_CONTENT_CHARSET_PATTERN.search(head)
+    if not match:
+        return None
+    return match.group(1).decode("ascii", errors="ignore") or None
+
+
+def _normalize_charset(charset: str) -> str:
+    normalized = charset.strip().strip("\"'").lower().replace("_", "-")
+    if normalized in {"shift-jis", "sjis", "x-sjis", "windows-31j", "ms-kanji"}:
+        return "cp932"
+    return normalized
 
 
 class _TableParser(HTMLParser):

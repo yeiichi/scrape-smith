@@ -154,3 +154,27 @@ def test_default_download_dir_avoids_existing_directories(tmp_path, monkeypatch)
     Path("urls-downloads-2").mkdir()
 
     assert downloads.default_download_dir("urls.txt") == Path("urls-downloads-3")
+
+
+def test_response_filename_accepts_utf8_extended_filename() -> None:
+    header = "attachment; filename*=UTF-8''%E6%97%A5%E6%9C%AC.pdf"
+
+    assert downloads.response_filename(header) == "日本.pdf"
+
+
+def test_response_filename_repairs_common_utf8_mojibake() -> None:
+    header = 'attachment; filename="æ\x97¥æ\x9c¬.pdf"'
+
+    assert downloads.response_filename(header) == "日本.pdf"
+
+
+def test_url_filename_accepts_utf8_percent_encoded_name() -> None:
+    url = "https://example.com/%E6%97%A5%E6%9C%AC.pdf"
+
+    assert downloads.url_filename(url) == "日本.pdf"
+
+
+def test_url_filename_accepts_shift_jis_percent_encoded_name() -> None:
+    url = "https://example.com/%93%FA%96%7B.pdf"
+
+    assert downloads.url_filename(url) == "日本.pdf"

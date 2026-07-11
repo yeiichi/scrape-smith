@@ -10,6 +10,11 @@ The package provides a `scrape` command with tools for table extraction, list
 extraction, body content JSONL conversion, combined three-in-one extraction,
 and polite file downloads.
 
+HTML input is decoded from byte streams with charset hints from byte-order
+marks, HTTP headers, and HTML metadata, with UTF-8 and common Japanese encodings
+as fallbacks. This keeps non-ASCII page text readable across the extraction
+commands.
+
 ## Installation
 
 scrape-smith requires Python 3.10 or newer.
@@ -130,8 +135,9 @@ urls.txt -> urls-downloads/
 ```
 
 Downloaded files keep their original filenames when the URL or response headers
-provide one. If no filename is available, scrape-smith falls back to a fixed-width
-epoch filename such as `1700000000123.pdf`.
+provide one, including UTF-8 response filenames and common percent-encoded
+non-ASCII URL paths. If no filename is available, scrape-smith falls back to a
+fixed-width epoch filename such as `1700000000123.pdf`.
 
 Warning: treat downloaded files as untrusted. Scan them before opening, and do
 not open files blindly; documents and spreadsheets can contain harmful content.

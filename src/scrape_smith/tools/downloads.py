@@ -10,6 +10,7 @@ from email.message import Message
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import unquote
+from urllib.parse import unquote_to_bytes
 from urllib.parse import urlparse
 from urllib.request import Request
 from urllib.request import urlopen
@@ -209,13 +210,24 @@ def response_filename(content_disposition: str | None) -> str | None:
     message = Message()
     message["Content-Disposition"] = content_disposition
     filename = message.get_filename()
-    return Path(filename).name if filename else None
+    return Path(repair_mojibake(filename)).name if filename else None
 
 
 def url_filename(url: str) -> str | None:
     """Extract a filename from a URL path."""
 
-    name = Path(unquote(urlparse(url).path)).name
+    path = urlparse(url).path
+    raw_name = Path(path).name
+    if not raw_name:
+        return None
+
+    try:
+        name = unquote_to_bytes(raw_name).decode("utf-8")
+    except UnicodeDecodeError:
+        try:
+            name = unquote_to_bytes(raw_name).decode("cp932")
+        except UnicodeDecodeError:
+            name = unquote(raw_name, errors="replace")
     return name or None
 
 
@@ -245,6 +257,26 @@ def safe_filename(filename: str) -> str:
         character if character not in {"/", "\\", "\0"} else "-" for character in name
     )
     return safe.strip(". ") or fallback_filename(".dat")
+
+
+def repair_mojibake(text: str) -> str:
+    """Repair common UTF-8-as-Latin-1 mojibake without changing normal text."""
+
+    if not _looks_like_mojibake(text):
+        return text
+    try:
+        repaired = text.encode("latin-1").decode("utf-8")
+    except UnicodeError:
+        return text
+    return repaired if _replacement_count(repaired) <= _replacement_count(text) else text
+
+
+def _looks_like_mojibake(text: str) -> bool:
+    return any(character in text for character in ("Ã", "Â", "â", "æ", "ç", "ã"))
+
+
+def _replacement_count(text: str) -> int:
+    return text.count("\ufffd")
 
 
 def fallback_filename(extension: str) -> str:

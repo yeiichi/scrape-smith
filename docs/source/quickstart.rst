@@ -3,6 +3,11 @@ Quickstart
 
 scrape-smith provides small, dependency-light tools for scraping workflows.
 
+HTML sources are decoded with charset hints from byte-order marks, HTTP
+headers, and HTML metadata, with UTF-8 and common Japanese encodings as
+fallbacks. This keeps non-ASCII page text readable across the extraction
+commands.
+
 Extract tables from a local HTML file:
 
 .. code-block:: bash
@@ -156,7 +161,9 @@ the URL list name:
    urls.txt -> urls-downloads/
 
 It downloads sequentially, waits between requests by default, skips non-target
-URLs, and prints start/end plus per-URL events to stdout.
+URLs, preserves original filenames when possible, and prints start/end plus
+per-URL events to stdout. Filenames can come from UTF-8 response headers or
+common percent-encoded non-ASCII URL paths.
 
 .. warning::
 

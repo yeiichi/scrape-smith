@@ -9,6 +9,10 @@ The command-line entry point is ``scrape``.
 
 The available commands are ``tables``, ``lists``, ``content``, ``three``, and ``download``.
 
+The HTML extraction commands decode input using byte-order marks, HTTP charset
+headers, HTML metadata, UTF-8, and common Japanese fallback encodings so
+non-ASCII page text is preserved when source metadata is incomplete.
+
 ``scrape tables``
 -----------------
 
@@ -222,7 +226,8 @@ Arguments and options:
 
 Target files are CSV, PDF, DOCX, XLSX, and PPTX. scrape-smith downloads URLs
 sequentially, keeps original filenames when possible, avoids overwriting
-existing files, and skips non-target URLs.
+existing files, and skips non-target URLs. UTF-8 response filenames and common
+percent-encoded non-ASCII URL filenames are decoded into readable output names.
 
 .. warning::
 

@@ -45,8 +45,9 @@ Filenames
 ---------
 
 Downloaded files keep their original filename when the URL path or response
-headers provide one. Existing files are not overwritten; a numeric suffix is
-added before the extension.
+headers provide one. UTF-8 ``Content-Disposition`` filenames and common
+percent-encoded non-ASCII URL paths are decoded into readable filenames. Existing
+files are not overwritten; a numeric suffix is added before the extension.
 
 .. warning::
 
